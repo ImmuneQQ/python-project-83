@@ -30,8 +30,20 @@ def index():
 @app.get('/urls')
 def urls_get():
     cur = conn.cursor()
-    cur.execute("SELECT * FROM urls ORDER BY id DESC;")
+    cur.execute("""
+        SELECT DISTINCT ON (urls.id)
+            urls.id,
+            urls.name,
+            url_checks.created_at,
+            url_checks.status_code
+        FROM urls JOIN url_checks ON urls.id = url_checks.url_id
+        ORDER BY urls.id DESC, url_checks.created_at DESC;
+    """)
     sites = cur.fetchall()
+    print(sites)
+    for site in sites:
+        print(site)
+        print(site[0])
     return render_template('urls.html', sites=sites)
 
 
@@ -80,9 +92,24 @@ def url_item(id):
     site = cur.fetchone()
     name = site[1]
     created_at = site[2].date()
+
+    cur.execute(f"SELECT * FROM url_checks WHERE url_id={id};")
+    url_checks = cur.fetchall()
+    print(url_checks)
+
     return render_template(
         'url_item.html',
         id=id,
         name=name,
-        created_at=created_at
+        created_at=created_at,
+        url_checks=url_checks
         )
+
+
+@app.post('/urls/<id>/checks')
+def url_check(id):
+    cur = conn.cursor()
+    time_now = datetime.now()
+    cur.execute(f"""INSERT INTO url_checks (created_at, url_id)
+                            VALUES ('{time_now}', {id});""")
+    return redirect(url_for('url_item', id=id))
