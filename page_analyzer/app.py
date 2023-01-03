@@ -76,7 +76,6 @@ def urls_post():
                 found_site = cur.fetchone()
             conn.close()
             flash('Страница успешно добавлена', 'alert-success')
-        
         return redirect(url_for('url_item', id=found_site[0]))
     else:
         if not url_is_valid:
@@ -114,7 +113,7 @@ def url_item(id):
         name=name,
         created_at=created_at,
         url_checks=url_checks
-        )
+    )
 
 
 @app.post('/urls/<id>/checks')
