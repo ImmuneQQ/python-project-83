@@ -67,7 +67,7 @@ def urls_post():
                             VALUES ('{norm_url}', '{time_now}');""")
             cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
             found_site = cur.fetchone()
-            flash('Cтраница успешно добавлена', 'alert-success')
+            flash('Страница успешно добавлена', 'alert-success')
         return redirect(url_for('url_item', id=found_site[0]))
     else:
         if not url_is_valid:
