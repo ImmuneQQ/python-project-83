@@ -12,6 +12,7 @@ import os
 from datetime import datetime
 import validators
 from urllib.parse import urlparse
+import requests
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -93,7 +94,7 @@ def url_item(id):
     name = site[1]
     created_at = site[2].date()
 
-    cur.execute(f"SELECT * FROM url_checks WHERE url_id={id};")
+    cur.execute(f"SELECT * FROM url_checks WHERE url_id={id} ORDER BY id DESC;")
     url_checks = cur.fetchall()
     print(url_checks)
 
@@ -110,6 +111,10 @@ def url_item(id):
 def url_check(id):
     cur = conn.cursor()
     time_now = datetime.now()
-    cur.execute(f"""INSERT INTO url_checks (created_at, url_id)
-                            VALUES ('{time_now}', {id});""")
+    cur.execute(f"SELECT name FROM urls WHERE id = {id};")
+    name = cur.fetchone()[0]
+    r = requests.get(name)
+    status_code = r.status_code
+    cur.execute(f"""INSERT INTO url_checks (created_at, url_id, status_code)
+                    VALUES ('{time_now}', {id}, {status_code});""")
     return redirect(url_for('url_item', id=id))
