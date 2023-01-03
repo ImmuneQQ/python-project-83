@@ -123,7 +123,6 @@ def url_check(id):
         title_text = title.string if title else ""
         description = soup.select_one("meta[name='description']")
         description_text = description.get('content') if description else ""
-        flash('Страница успешно проверена', 'alert-success')
         cur.execute(f"""INSERT INTO url_checks (
                             url_id,
                             status_code,
@@ -139,4 +138,5 @@ def url_check(id):
                             '{description_text}',
                             '{time_now}'
                             );""")
+        flash('Страница успешно проверена', 'alert-success')
     return redirect(url_for('url_item', id=id))
