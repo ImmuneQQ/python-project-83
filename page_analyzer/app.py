@@ -20,7 +20,7 @@ load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(24)
 
 
 @app.route('/')
@@ -132,6 +132,9 @@ def url_check(id):
         flash('Произошла ошибка при проверке', 'alert-danger')
     else:
         status_code = r.status_code
+        if (status_code != 200):
+            flash('Произошла ошибка при проверке', 'alert-danger')
+            return redirect(url_for('url_item', id=id))
         content = r.text
         soup = BeautifulSoup(content, 'html.parser')
         h1 = soup.h1
