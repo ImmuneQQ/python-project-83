@@ -18,8 +18,8 @@
             </ul>
         </nav>
     </header>
-    {% for message in get_flashed_messages(with_categories=True) %}
-    <div class="alert {{message[0]}}" role="alert">{{message[1]}}</div>
+    {% for category, message in get_flashed_messages(with_categories=True) %}
+    <div class="alert {{category}}" role="alert">{{message}}</div>
     {% endfor %}
 
     <main class="flex-grow-1">
