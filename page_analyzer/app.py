@@ -6,7 +6,7 @@ from flask import (
     request,
     flash
 )
-import psycopg2
+from psycopg2 import connect
 import os
 from datetime import datetime
 import validators
@@ -30,7 +30,7 @@ def index():
 
 @app.get('/urls')
 def urls_get():
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     cur.execute("""
@@ -59,19 +59,19 @@ def urls_post():
     if url_is_valid and not url_is_empty and not url_is_too_long:
         parsed_url = urlparse(url)
         norm_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = connect(DATABASE_URL)
         conn.set_session(autocommit=True)
         cur = conn.cursor()
         cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
         found_site = cur.fetchone()
         if found_site:
-            flash('Страница уже существует', 'alert-info')
+            flash('Cтраница уже существует', 'alert-info')
         else:
             cur.execute(f"""INSERT INTO urls (name, created_at)
                             VALUES ('{norm_url}', '{time_now}');""")
             cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
             found_site = cur.fetchone()
-            flash('Страница успешно добавлена', 'alert-success')
+            flash('Cтраница успешно добавлена', 'alert-success')
         cur.close()
         conn.close()
         return redirect(url_for('url_item', id=found_site[0]))
@@ -89,7 +89,7 @@ def urls_post():
 
 @app.get('/urls/<id>')
 def url_item(id):
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     cur.execute(f"SELECT * FROM urls WHERE id={id};")
@@ -115,7 +115,7 @@ def url_item(id):
 
 @app.post('/urls/<id>/checks')
 def url_check(id):
-    conn = psycopg2.connect(DATABASE_URL)
+    conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     time_now = datetime.now()
