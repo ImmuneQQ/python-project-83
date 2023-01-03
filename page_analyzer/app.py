@@ -133,33 +133,33 @@ def url_check(id):
         status_code = r.status_code
         if (status_code != 200):
             flash('Произошла ошибка при проверке', 'alert-danger')
-            return redirect(url_for('url_item', id=id))
-        content = r.text
-        soup = BeautifulSoup(content, 'html.parser')
-        h1 = soup.h1
-        h1_text = h1.string if h1 else ""
-        title = soup.title
-        title_text = title.string if title else ""
-        description = soup.select_one("meta[name='description']")
-        description_text = description.get('content') if description else ""
-        conn = connect(DATABASE_URL)
-        conn.set_session(autocommit=True)
-        with conn.cursor() as cur:
-            cur.execute(f"""INSERT INTO url_checks (
-                                url_id,
-                                status_code,
-                                h1,
-                                title,
-                                description, created_at
-                                )
-                            VALUES (
-                                {id},
-                                {status_code},
-                                '{h1_text}',
-                                '{title_text}',
-                                '{description_text}',
-                                '{time_now}'
-                                );""")
-        conn.close()
-        flash('Страница успешно проверена', 'alert-success')
+        else:
+            content = r.text
+            soup = BeautifulSoup(content, 'html.parser')
+            h1 = soup.h1
+            h1_text = h1.string if h1 else ""
+            title = soup.title
+            title_text = title.string if title else ""
+            description = soup.select_one("meta[name='description']")
+            description_text = description.get('content') if description else ""
+            conn = connect(DATABASE_URL)
+            conn.set_session(autocommit=True)
+            with conn.cursor() as cur:
+                cur.execute(f"""INSERT INTO url_checks (
+                                    url_id,
+                                    status_code,
+                                    h1,
+                                    title,
+                                    description, created_at
+                                    )
+                                VALUES (
+                                    {id},
+                                    {status_code},
+                                    '{h1_text}',
+                                    '{title_text}',
+                                    '{description_text}',
+                                    '{time_now}'
+                                    );""")
+            conn.close()
+            flash('Страница успешно проверена', 'alert-success')
     return redirect(url_for('url_item', id=id))
