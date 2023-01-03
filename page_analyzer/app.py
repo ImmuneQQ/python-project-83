@@ -37,7 +37,7 @@ def urls_get():
             urls.name,
             url_checks.created_at,
             url_checks.status_code
-        FROM urls JOIN url_checks ON urls.id = url_checks.url_id
+        FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
         ORDER BY urls.id DESC, url_checks.created_at DESC;
     """)
     sites = cur.fetchall()
@@ -70,7 +70,6 @@ def urls_post():
             cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
             found_site = cur.fetchone()
             flash('Страница успешно добавлена', 'alert-success')
-        messages = get_flashed_messages(with_categories=True)
         return redirect(url_for('url_item', id=found_site[0]))
     else:
         if not url_is_valid:
@@ -79,11 +78,9 @@ def urls_post():
             flash('URL обязателен', 'alert-danger')
         if url_is_too_long:
             flash('URL превышает 255 символов', 'alert-danger')
-        messages = get_flashed_messages(with_categories=True)
         return render_template(
             'index.html',
-            url=url, messages=messages
-            ), 422
+            url=url), 422
 
 
 @app.get('/urls/<id>')
@@ -113,8 +110,13 @@ def url_check(id):
     time_now = datetime.now()
     cur.execute(f"SELECT name FROM urls WHERE id = {id};")
     name = cur.fetchone()[0]
-    r = requests.get(name)
-    status_code = r.status_code
-    cur.execute(f"""INSERT INTO url_checks (created_at, url_id, status_code)
-                    VALUES ('{time_now}', {id}, {status_code});""")
+    try:
+        r = requests.get(name)
+    except:
+        flash('Произошла ошибка при проверке', 'alert-danger')
+    else:
+        status_code = r.status_code
+        flash('Страница успешно проверена', 'alert-success')
+        cur.execute(f"""INSERT INTO url_checks (created_at, url_id, status_code)
+                        VALUES ('{time_now}', {id}, {status_code});""")
     return redirect(url_for('url_item', id=id))

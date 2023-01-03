@@ -14,8 +14,8 @@
             <tr>
                 <td>{{ site[0] }}</td>
                 <td><a href="{{ site[1] }}">{{ site[1] }}</a></td>
-                <td>{{ site[2].date() }}</td>
-                <td>{{ site[3] }}</td>
+                <td>{{ "" if site[2] == None else site[2].date() }}</td>
+                <td>{{ "" if site[3] == None else site[3] }}</td>
             </tr>
             {% endfor %}
         </tbody>

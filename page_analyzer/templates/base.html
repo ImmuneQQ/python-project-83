@@ -18,7 +18,7 @@
             </ul>
         </nav>
     </header>
-    {% for message in messages %}
+    {% for message in get_flashed_messages(with_categories=True) %}
     <div class="alert {{message[0]}}">{{message[1]}}</div>
     {% endfor %}
 
