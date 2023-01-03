@@ -12,6 +12,7 @@ from datetime import datetime
 import validators
 from urllib.parse import urlparse
 import requests
+from bs4 import BeautifulSoup
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -40,10 +41,6 @@ def urls_get():
         ORDER BY urls.id DESC, url_checks.created_at DESC;
     """)
     sites = cur.fetchall()
-    print(sites)
-    for site in sites:
-        print(site)
-        print(site[0])
     return render_template('urls.html', sites=sites)
 
 
@@ -94,7 +91,6 @@ def url_item(id):
                     WHERE url_id={id}
                     ORDER BY id DESC;""")
     url_checks = cur.fetchall()
-    print(url_checks)
 
     return render_template(
         'url_item.html',
@@ -110,15 +106,35 @@ def url_check(id):
     cur = conn.cursor()
     time_now = datetime.now()
     cur.execute(f"SELECT name FROM urls WHERE id = {id};")
-    name = cur.fetchone()[0]
+    url_name = cur.fetchone()[0]
     try:
-        r = requests.get(name)
+        r = requests.get(url_name)
     except requests.ConnectionError:
         flash('Произошла ошибка при проверке', 'alert-danger')
     else:
         status_code = r.status_code
+        content = r.text
+        soup = BeautifulSoup(content, 'html.parser')
+        h1 = soup.h1
+        h1_text = h1.string if h1 else ""
+        title = soup.title
+        title_text = title.string if title else ""
+        description = soup.select_one("meta[name='description']")
+        description_text = description.get('content') if description else ""
         flash('Страница успешно проверена', 'alert-success')
-        cur.execute(f"""INSERT INTO url_checks
-                        (created_at, url_id, status_code)
-                        VALUES ('{time_now}', {id}, {status_code});""")
+        cur.execute(f"""INSERT INTO url_checks (
+                            url_id,
+                            status_code,
+                            h1,
+                            title,
+                            description, created_at
+                            )
+                        VALUES (
+                            {id},
+                            {status_code},
+                            '{h1_text}',
+                            '{title_text}',
+                            '{description_text}',
+                            '{time_now}'
+                            );""")
     return redirect(url_for('url_item', id=id))
