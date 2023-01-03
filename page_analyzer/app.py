@@ -64,16 +64,22 @@ def urls_post():
         cur = conn.cursor()
         cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
         found_site = cur.fetchone()
+        cur.close()
+        conn.close()
         if found_site:
             flash('Страница уже существует', 'alert-info')
         else:
+            conn = connect(DATABASE_URL)
+            conn.set_session(autocommit=True)
+            cur = conn.cursor()
             cur.execute(f"""INSERT INTO urls (name, created_at)
                             VALUES ('{norm_url}', '{time_now}');""")
             cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
             found_site = cur.fetchone()
+            cur.close()
+            conn.close()
             flash('Страница успешно добавлена', 'alert-success')
-        cur.close()
-        conn.close()
+        
         return redirect(url_for('url_item', id=found_site[0]))
     else:
         if not url_is_valid:
@@ -94,16 +100,19 @@ def url_item(id):
     cur = conn.cursor()
     cur.execute(f"SELECT * FROM urls WHERE id={id};")
     site = cur.fetchone()
-    name = site[1]
-    created_at = site[2].date()
-
+    cur.close()
+    conn.close()
+    conn = connect(DATABASE_URL)
+    conn.set_session(autocommit=True)
+    cur = conn.cursor()
     cur.execute(f"""SELECT * FROM url_checks
                     WHERE url_id={id}
                     ORDER BY id DESC;""")
     url_checks = cur.fetchall()
     cur.close()
     conn.close()
-
+    name = site[1]
+    created_at = site[2].date()
     return render_template(
         'url_item.html',
         id=id,
@@ -115,12 +124,14 @@ def url_item(id):
 
 @app.post('/urls/<id>/checks')
 def url_check(id):
+    time_now = datetime.now()
     conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    time_now = datetime.now()
     cur.execute(f"SELECT name FROM urls WHERE id = {id};")
     url_name = cur.fetchone()[0]
+    cur.close()
+    conn.close()
     try:
         r = requests.get(url_name)
     except requests.ConnectionError:
@@ -135,6 +146,9 @@ def url_check(id):
         title_text = title.string if title else ""
         description = soup.select_one("meta[name='description']")
         description_text = description.get('content') if description else ""
+        conn = connect(DATABASE_URL)
+        conn.set_session(autocommit=True)
+        cur = conn.cursor()
         cur.execute(f"""INSERT INTO url_checks (
                             url_id,
                             status_code,
@@ -150,7 +164,7 @@ def url_check(id):
                             '{description_text}',
                             '{time_now}'
                             );""")
+        cur.close()
+        conn.close()
         flash('Страница успешно проверена', 'alert-success')
-    cur.close()
-    conn.close()
     return redirect(url_for('url_item', id=id))
