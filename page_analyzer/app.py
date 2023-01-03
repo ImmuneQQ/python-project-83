@@ -65,13 +65,13 @@ def urls_post():
         cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
         found_site = cur.fetchone()
         if found_site:
-            flash('Cтраница уже существует', 'alert-info')
+            flash('Страница уже существует', 'alert-info')
         else:
             cur.execute(f"""INSERT INTO urls (name, created_at)
                             VALUES ('{norm_url}', '{time_now}');""")
             cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
             found_site = cur.fetchone()
-            flash('Cтраница успешно добавлена', 'alert-success')
+            flash('Страница успешно добавлена', 'alert-success')
         cur.close()
         conn.close()
         return redirect(url_for('url_item', id=found_site[0]))
