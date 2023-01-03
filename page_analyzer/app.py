@@ -32,18 +32,17 @@ def index():
 def urls_get():
     conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT DISTINCT ON (urls.id)
-            urls.id,
-            urls.name,
-            url_checks.created_at,
-            url_checks.status_code
-        FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
-        ORDER BY urls.id DESC, url_checks.created_at DESC;
-    """)
-    sites = cur.fetchall()
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT ON (urls.id)
+                urls.id,
+                urls.name,
+                url_checks.created_at,
+                url_checks.status_code
+            FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
+            ORDER BY urls.id DESC, url_checks.created_at DESC;
+        """)
+        sites = cur.fetchall()
     conn.close()
     return render_template('urls.html', sites=sites)
 
@@ -61,22 +60,20 @@ def urls_post():
         norm_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
         conn = connect(DATABASE_URL)
         conn.set_session(autocommit=True)
-        cur = conn.cursor()
-        cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
-        found_site = cur.fetchone()
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
+            found_site = cur.fetchone()
         conn.close()
         if found_site:
             flash('Страница уже существует', 'alert-info')
         else:
             conn = connect(DATABASE_URL)
             conn.set_session(autocommit=True)
-            cur = conn.cursor()
-            cur.execute(f"""INSERT INTO urls (name, created_at)
-                            VALUES ('{norm_url}', '{time_now}');""")
-            cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
-            found_site = cur.fetchone()
-            cur.close()
+            with conn.cursor() as cur:
+                cur.execute(f"""INSERT INTO urls (name, created_at)
+                                VALUES ('{norm_url}', '{time_now}');""")
+                cur.execute(f"SELECT * FROM urls WHERE name='{norm_url}';")
+                found_site = cur.fetchone()
             conn.close()
             flash('Страница успешно добавлена', 'alert-success')
         
@@ -97,19 +94,17 @@ def urls_post():
 def url_item(id):
     conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM urls WHERE id={id};")
-    site = cur.fetchone()
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT * FROM urls WHERE id={id};")
+        site = cur.fetchone()
     conn.close()
     conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    cur.execute(f"""SELECT * FROM url_checks
-                    WHERE url_id={id}
-                    ORDER BY id DESC;""")
-    url_checks = cur.fetchall()
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute(f"""SELECT * FROM url_checks
+                        WHERE url_id={id}
+                        ORDER BY id DESC;""")
+        url_checks = cur.fetchall()
     conn.close()
     name = site[1]
     created_at = site[2].date()
@@ -127,10 +122,9 @@ def url_check(id):
     time_now = datetime.now()
     conn = connect(DATABASE_URL)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    cur.execute(f"SELECT name FROM urls WHERE id = {id};")
-    url_name = cur.fetchone()[0]
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT name FROM urls WHERE id = {id};")
+        url_name = cur.fetchone()[0]
     conn.close()
     try:
         r = requests.get(url_name)
@@ -148,23 +142,22 @@ def url_check(id):
         description_text = description.get('content') if description else ""
         conn = connect(DATABASE_URL)
         conn.set_session(autocommit=True)
-        cur = conn.cursor()
-        cur.execute(f"""INSERT INTO url_checks (
-                            url_id,
-                            status_code,
-                            h1,
-                            title,
-                            description, created_at
-                            )
-                        VALUES (
-                            {id},
-                            {status_code},
-                            '{h1_text}',
-                            '{title_text}',
-                            '{description_text}',
-                            '{time_now}'
-                            );""")
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute(f"""INSERT INTO url_checks (
+                                url_id,
+                                status_code,
+                                h1,
+                                title,
+                                description, created_at
+                                )
+                            VALUES (
+                                {id},
+                                {status_code},
+                                '{h1_text}',
+                                '{title_text}',
+                                '{description_text}',
+                                '{time_now}'
+                                );""")
         conn.close()
         flash('Страница успешно проверена', 'alert-success')
     return redirect(url_for('url_item', id=id))
