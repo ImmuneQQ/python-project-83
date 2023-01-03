@@ -4,8 +4,7 @@ from flask import (
     redirect,
     url_for,
     request,
-    flash,
-    get_flashed_messages
+    flash
 )
 import psycopg2
 import os
@@ -91,7 +90,9 @@ def url_item(id):
     name = site[1]
     created_at = site[2].date()
 
-    cur.execute(f"SELECT * FROM url_checks WHERE url_id={id} ORDER BY id DESC;")
+    cur.execute(f"""SELECT * FROM url_checks
+                    WHERE url_id={id}
+                    ORDER BY id DESC;""")
     url_checks = cur.fetchall()
     print(url_checks)
 
@@ -112,11 +113,12 @@ def url_check(id):
     name = cur.fetchone()[0]
     try:
         r = requests.get(name)
-    except:
+    except requests.ConnectionError:
         flash('Произошла ошибка при проверке', 'alert-danger')
     else:
         status_code = r.status_code
         flash('Страница успешно проверена', 'alert-success')
-        cur.execute(f"""INSERT INTO url_checks (created_at, url_id, status_code)
+        cur.execute(f"""INSERT INTO url_checks
+                        (created_at, url_id, status_code)
                         VALUES ('{time_now}', {id}, {status_code});""")
     return redirect(url_for('url_item', id=id))
